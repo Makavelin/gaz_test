@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Регистрация — Users API</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-height: 100vh; margin: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #eef2ff 0%, #f7f8fa 100%);
+      color: #222;
+    }
+    .card {
+      width: 100%; max-width: 380px; background: #fff;
+      border-radius: 12px; padding: 28px 24px;
+      box-shadow: 0 10px 30px rgba(30, 58, 138, .12);
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p.sub { margin: 0 0 20px; color: #6b7280; font-size: 13px; }
+    label { display: block; font-size: 12px; color: #4b5563; margin-bottom: 4px; }
+    input {
+      width: 100%; padding: 10px 12px; border: 1px solid #ccd;
+      border-radius: 8px; font-size: 14px; margin-bottom: 14px;
+    }
+    input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+    button {
+      width: 100%; padding: 10px 14px; border: none; border-radius: 8px;
+      background: #2563eb; color: #fff; font-size: 15px; font-weight: 500;
+      cursor: pointer; transition: background .15s;
+    }
+    button:hover { background: #1e4fd8; }
+    button:disabled { background: #93b4f5; cursor: wait; }
+    .msg { padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .msg.ok  { background: #dcfce7; color: #166534; display: block; }
+    .msg.err { background: #fee2e2; color: #991b1b; display: block; }
+    .footer { margin-top: 16px; font-size: 12px; color: #6b7280; text-align: center; }
+    .footer a { color: #2563eb; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Регистрация</h1>
+    <p class="sub">Создайте аккаунт, чтобы войти</p>
+
+    <div id="msg" class="msg"></div>
+
+    <form id="register-form" novalidate>
+      <label for="name">Имя</label>
+      <input id="name" type="text" placeholder="Ваше имя" required autocomplete="name">
+
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="you@example.com" required autocomplete="username">
+
+      <label for="password">Пароль</label>
+      <input id="password" type="password" placeholder="••••••••" required autocomplete="new-password">
+
+      <button type="submit" id="submit-btn">Создать аккаунт</button>
+    </form>
+
+    <div class="footer">
+      Уже есть аккаунт? <a href="/login">Войти</a>
+    </div>
+  </div>
+
+  <script>
+    const msg  = document.getElementById("msg");
+    const form = document.getElementById("register-form");
+    const btn  = document.getElementById("submit-btn");
+
+    function showMsg(text, type = "ok") {
+      msg.textContent = text;
+      msg.className = "msg " + type;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name     = document.getElementById("name").value.trim();
+      const email    = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!name || !email || !password) {
+        showMsg("Заполните все поля", "err");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Создание...";
+
+      try {
+        const res = await fetch("/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          const detail = data?.detail
+            ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail))
+            : `HTTP ${res.status}`;
+          throw new Error(detail);
+        }
+        showMsg("Аккаунт создан, перенаправление на вход...", "ok");
+        setTimeout(() => { window.location.href = "/login"; }, 800);
+      } catch (err) {
+        showMsg("Ошибка регистрации: " + err.message, "err");
+        btn.disabled = false;
+        btn.textContent = "Создать аккаунт";
+      }
+    });
+  </script>
+</body>
+</html>
